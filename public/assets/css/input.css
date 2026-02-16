@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+/* Hide number spinners on mobile (< 640px) */
+@media (max-width: 639px) {
+
+    .no-spinner-mobile::-webkit-outer-spin-button,
+    .no-spinner-mobile::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        appearance: none;
+        margin: 0;
+    }
+
+    .no-spinner-mobile[type=number] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+}
