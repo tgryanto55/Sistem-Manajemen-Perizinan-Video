@@ -3,7 +3,7 @@
 [![Framework](https://img.shields.io/badge/Framework-CodeIgniter%204.7-EF4444?style=for-the-badge&logo=codeigniter&logoColor=white)](https://codeigniter.com)
 [![Styling](https://img.shields.io/badge/CSS-Tailwind%204.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 [![JS](https://img.shields.io/badge/Frontend-Alpine.js%20%26%20HTMX-000000?style=for-the-badge&logo=alpine.js&logoColor=white)](https://alpinejs.dev)
-[![AI](https://img.shields.io/badge/Developed%20with-AI%20Assisted-6D28D9?style=for-the-badge&logo=google-gemini&logoColor=white)](#-pengembangan-berbasis-ai)
+
 
 Repositori ini berisi solusi untuk tugas technical test "Web Developer" dari Mediatama. Proyek ini dibangun dengan standar profesional menggunakan **Clean Architecture**, keamanan berlapis, dan pengalaman pengguna (UX) berperforma tinggi.
 
