@@ -165,9 +165,6 @@ Akses di: `http://localhost:8080`
 
 Proyek ini dikembangkan menggunakan workflow **AI-assisted development** menggunakan **Google Antigravity**.
 
-> [!NOTE]
-> Proyek ini dikembangkan dengan dukungan teknologi AI untuk **mempermudah dan mempercepat proses pengembangan**, sehingga implementasi arsitektur yang kompleks, optimasi query, dan sistem keamanan dapat diselesaikan dengan tetap menjaga standar kualitas kode.
-
 ---
 
 ## Lisensi
