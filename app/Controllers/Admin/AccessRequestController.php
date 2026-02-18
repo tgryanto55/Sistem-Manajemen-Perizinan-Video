@@ -8,43 +8,51 @@ use App\Actions\Video\ApproveVideoAccessAction;
 use App\Actions\Video\RejectVideoAccessAction;
 
 /**
- * AccessRequestController (Admin)
- * 
- * Manages the workflow for approving or rejecting video access requests.
- * It integrates with ApproveVideoAccessAction and RejectVideoAccessAction 
- * for clean separation of business logic.
+ * Controller untuk mengelola request akses video (Admin).
  */
 class AccessRequestController extends BaseController
 {
     /**
-     * Lists all requests with detailed associations (User & Video names).
+     * Tampilkan semua request.
      */
     public function index()
     {
+        // Siapkan model request
         $requestModel = new VideoAccessRequestModel();
+        // Ambil data request beserta detail user dan videonya
         $data['requests'] = $requestModel->getRequestsWithDetails();
+        // Tampilkan view
         return view('admin/requests/index', $data);
     }
 
     /**
-     * Approves a request and sets the expiration time.
+     * Approve request dan set durasi akses.
+     * 
+     * HTMX Support:
+     * - Refresh parsial (cuma baris tabel yang berubah).
+     * - Trigger toast notifikasi sukses di frontend.
      */
     public function approve($id)
     {
-        // Admins can specify hours and minutes of access. Defaults to 24h.
+        // Ambil input durasi dari form (default 24 jam)
         $durationH = (int) ($this->request->getPost('duration_h') ?? 24);
         $durationM = (int) ($this->request->getPost('duration_m') ?? 0);
         
+        // Panggil action untuk proses approve
         $action = new ApproveVideoAccessAction();
 
         if ($action->execute($id, $durationH, $durationM)) {
+            // Cek apakah request dari HTMX
             if ($this->request->hasHeader('HX-Request')) {
                 $requestModel = new VideoAccessRequestModel();
+                // Ambil data terbaru untuk baris tabel yang diupdate
                 $data['requests'] = [$requestModel->getRequestWithDetails($id)];
+                // Kirim balik partial view dan trigger toast notifikasi
                 return $this->response
                     ->setHeader('HX-Trigger', json_encode(['showToast' => ['message' => 'Request approved successfully.', 'type' => 'success']]))
                     ->setBody(view('admin/requests/_rows', $data));
             }
+            // Fallback untuk request biasa (non-HTMX)
             return redirect()->back()->with('success', 'Request approved successfully.');
         }
 
@@ -52,28 +60,36 @@ class AccessRequestController extends BaseController
     }
 
     /**
-     * Manually updates the duration of an already approved request.
+     * Update durasi akses yang sudah diapprove.
+     * HTMX Support: Update baris tabel & notifikasi.
      */
     public function update($id)
     {
+        // Ambil input durasi baru
         $durationH = (int) ($this->request->getPost('duration_h') ?? 0);
         $durationM = (int) ($this->request->getPost('duration_m') ?? 0);
         
         $requestModel = new VideoAccessRequestModel();
+        // Cari data request berdasarkan ID
         $request = $requestModel->find($id);
 
+        // Jika tidak ditemukan, kembalikan error
         if (!$request) {
             return redirect()->back()->with('error', 'Request not found.');
         }
 
-        // We use VideoDurationService to recalculate the new expiry date.
+        // Hitung ulang waktu expired menggunakan service
         $durationService = new \App\Services\VideoDurationService();
         $approvedAt = $request['approved_at'] ?? \CodeIgniter\I18n\Time::now()->toDateTimeString();
         $expiredAt  = $durationService->calculateExpiry($approvedAt, $durationH, $durationM);
 
+        // Update data expired_at di database
         if ($requestModel->update($id, ['expired_at' => $expiredAt])) {
+            // Cek apakah request dari HTMX
             if ($this->request->hasHeader('HX-Request')) {
+                // Ambil data terbaru untuk update tampilan
                 $data['requests'] = [$requestModel->getRequestWithDetails($id)];
+                // Kirim response partial header dan body
                 return $this->response
                     ->setHeader('HX-Trigger', json_encode(['showToast' => ['message' => 'Access duration updated.', 'type' => 'success']]))
                     ->setBody(view('admin/requests/_rows', $data));
@@ -85,12 +101,15 @@ class AccessRequestController extends BaseController
     }
 
     /**
-     * Deletes a request record.
+     * Hapus record request.
+     * HTMX Support: Hapus elemen dari tabel (return string kosong).
      */
     public function delete($id)
     {
         $requestModel = new VideoAccessRequestModel();
+        // Jalankan perintah delete
         if ($requestModel->delete($id)) {
+            // Jika request HTMX, kirim respon kosong untuk menghapus elemen DOM
             if ($this->request->hasHeader('HX-Request')) {
                 return $this->response
                     ->setHeader('HX-Trigger', json_encode(['showToast' => ['message' => 'Request removed.', 'type' => 'success']]))
@@ -103,13 +122,16 @@ class AccessRequestController extends BaseController
     }
 
     /**
-     * Rejects a pending request.
+     * Tolak request yang pending.
+     * HTMX Support: Refresh status jadi rejected.
      */
     public function reject($id)
     {
+        // Panggil action reject
         $action = new RejectVideoAccessAction();
 
         if ($action->execute($id)) {
+            // Jika HTMX, kirim update baris tabel dengan status 'rejected'
             if ($this->request->hasHeader('HX-Request')) {
                 $requestModel = new VideoAccessRequestModel();
                 $data['requests'] = [$requestModel->getRequestWithDetails($id)];
@@ -124,11 +146,12 @@ class AccessRequestController extends BaseController
     }
 
     /**
-     * Helper for HTMX to refresh the entire request table.
+     * Helper list rows untuk refresh tabel via HTMX.
      */
     public function listRows()
     {
         $requestModel = new VideoAccessRequestModel();
+        // Ambil semua data request untuk dirender ulang
         $data['requests'] = $requestModel->getRequestsWithDetails();
         return view('admin/requests/_rows', $data);
     }

@@ -5,10 +5,10 @@ namespace App\Models;
 use CodeIgniter\Model;
 
 /**
- * VideoAccessRequestModel
+ * Model VideoAccessRequest
  * 
- * Manages the joining table between Users and Videos.
- * Tracks the status of access (pending, approved, rejected) and the expiration time.
+ * Mengelola tabel 'video_access_requests' (tabel penghubung antara User dan Video).
+ * Mencatat status akses (pending, approved, rejected) dan waktu kadaluarsa.
  */
 class VideoAccessRequestModel extends Model
 {
@@ -20,27 +20,27 @@ class VideoAccessRequestModel extends Model
     protected $protectFields    = true;
     protected $allowedFields    = ['user_id', 'video_id', 'status', 'requested_at', 'approved_at', 'expired_at'];
 
-    // Dates
+    // Konfigurasi Timestamp
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
     /**
-     * Custom query to fetch requests along with User Names and Video Titles.
-     * Used primarily by the Admin Dashboard to show meaningful data.
+     * Ambil semua request beserta detail User dan Video-nya.
+     * Dipakai di halaman Admin Dashboard biar datanya informatif.
      */
     public function getRequestsWithDetails()
     {
         return $this->select('video_access_requests.*, users.name as user_name, videos.title as video_title')
                     ->join('users', 'users.id = video_access_requests.user_id')
                     ->join('videos', 'videos.id = video_access_requests.video_id')
-                    ->orderBy('video_access_requests.created_at', 'DESC') // Newest first
+                    ->orderBy('video_access_requests.created_at', 'DESC') // Yang terbaru ditaruh paling atas
                     ->findAll();
     }
 
     /**
-     * Simple variation to fetch details for a single specific request.
+     * Ambil detail satu request spesifik beserta nama user dan judul videonya.
      */
     public function getRequestWithDetails($id)
     {

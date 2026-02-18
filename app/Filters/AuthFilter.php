@@ -7,18 +7,17 @@ use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 
 /**
- * AuthFilter
- * 
- * Basic authentication filter.
- * Ensures that a user is logged in before allowing access to a route.
+ * Filter Autentikasi Dasar
+ * Memastikan user sudah login sebelum mengakses route tertentu.
  */
 class AuthFilter implements FilterInterface
 {
     /**
-     * Checks if a user_id exists in the session.
+     * Cek apakah ada session user_id.
      */
     public function before(RequestInterface $request, $arguments = null)
     {
+        // Jika tidak ada session 'user_id', berarti belum login
         if (!session()->has('user_id')) {
             return redirect()->to('/login')->with('error', 'Please login to continue.');
         }
@@ -26,6 +25,6 @@ class AuthFilter implements FilterInterface
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        // No post-processing needed.
+        // Tidak ada proses setelah request
     }
 }

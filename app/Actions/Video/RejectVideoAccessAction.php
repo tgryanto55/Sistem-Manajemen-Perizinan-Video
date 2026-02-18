@@ -5,9 +5,7 @@ namespace App\Actions\Video;
 use App\Models\VideoAccessRequestModel;
 
 /**
- * RejectVideoAccessAction
- * 
- * Simple action to change the status of a request to 'rejected'.
+ * Handle penolakan akses video.
  */
 class RejectVideoAccessAction
 {
@@ -15,14 +13,13 @@ class RejectVideoAccessAction
 
     public function __construct()
     {
+        // Inisialisasi model request
         $this->requestModel = new VideoAccessRequestModel();
     }
 
     /**
-     * Updates the request status to rejected.
-     *
-     * @param int $requestId The ID of the request to reject.
-     * @return bool
+     * Eksekusi reject request.
+     * Update status jadi 'rejected'.
      */
     public function execute(int $requestId): bool
     {

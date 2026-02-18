@@ -6,11 +6,10 @@ use App\Models\VideoAccessRequestModel;
 use App\Services\VideoDurationService;
 
 /**
- * VideoAccessService
+ * Service Akses Video
  * 
- * This service provides methods to check the current access status 
- * for a specific user and video. 
- * It handles the logic for determining if access is active or has expired.
+ * Menangani logika pengecekan apakah user boleh nonton video tertentu atau tidak.
+ * Termasuk cek status approved dan apakah durasinya sudah expired.
  */
 class VideoAccessService
 {
@@ -24,26 +23,24 @@ class VideoAccessService
     }
 
     /**
-     * Checks if a user has currently active (approved and not expired) access.
-     * 
-     * @param int $userId
-     * @param int $videoId
-     * @return bool
+     * Cek apakah user punya akses aktif ke video tertentu.
+     * Syarat: Status approved DAN belum expired.
      */
     public function hasActiveAccess(int $userId, int $videoId): bool
     {
-        // Find an approved request for this specific combo.
+        // Cari request yang statusnya approved
         $request = $this->requestModel->where([
             'user_id'  => $userId,
             'video_id' => $videoId,
             'status'   => 'approved',
         ])->first();
 
+        // Kalau gak ada yang approved, tolak
         if (!$request) {
             return false;
         }
 
-        // Even if status is approved, we must double-check the time limit.
+        // Kalau ada, pastikan belum kadaluarsa
         if ($request['expired_at'] && $this->durationService->isExpired($request['expired_at'])) {
             return false;
         }
@@ -52,34 +49,33 @@ class VideoAccessService
     }
 
     /**
-     * Gets the full access status (none, pending, approved, rejected, expired).
-     * 
-     * @param int $userId
-     * @param int $videoId
-     * @return string The status label.
+     * Ambil status akses lengkap (none, pending, approved, rejected, expired).
+     * Berguna untuk menampilkan status di UI card video.
      */
     public function getAccessStatus(int $userId, int $videoId): string
     {
-        // Get the latest request from this user for this video.
+        // Ambil request paling terakhir
         $request = $this->requestModel->where([
             'user_id'  => $userId,
             'video_id' => $videoId,
         ])->orderBy('created_at', 'DESC')->first();
 
+        // Belum pernah request sama sekali
         if (!$request) {
             return 'none';
         }
         
-        // If approved, check if it's already past the expiration date.
+        // Kalau approved tapi udah lewat tanggal expired, return 'expired'
         if ($request['status'] === 'approved' && $request['expired_at'] && $this->durationService->isExpired($request['expired_at'])) {
              return 'expired';
         }
 
+        // Return status aslinya (pending/approved/rejected)
         return $request['status'];
     }
 
     /**
-     * Helper to expose expiration checks to other classes.
+     * Helper buat cek expired (wrapper function).
      */
     public function isExpired(string $expiredAt): bool
     {

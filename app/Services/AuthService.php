@@ -5,11 +5,10 @@ namespace App\Services;
 use App\Models\UserModel;
 
 /**
- * AuthService
+ * Service Auth
  * 
- * This service handles all authentication-related tasks, including login, 
- * logout, and checking user roles from the session.
- * It abstracts the session management and model interactions.
+ * Menangani semua urusan autentikasi (login, logout, cek user).
+ * Memisahkan logic auth dari controller biar lebih rapi.
  */
 class AuthService
 {
@@ -21,34 +20,33 @@ class AuthService
     }
 
     /**
-     * Attempts to log in a user with email and password.
-     * 
-     * @param string $email
-     * @param string $password
-     * @return bool True if successful, false otherwise.
+     * Coba login user dengan email dan password.
      */
     public function attempt(string $email, string $password): bool
     {
+        // Cari user berdasarkan email
         $user = $this->userModel->where('email', $email)->first();
 
+        // Kalau user gak ketemu, gagal
         if (!$user) {
             return false;
         }
 
-        // Verify the provided password against the hashed password in the DB.
+        // Verifikasi password (dicocokkan dengan hash di DB)
         if (password_verify($password, $user['password'])) {
-            // Store essential user data in the session for global access.
+            // Kalau cocok, simpan data penting ke session
             session()->set('user_id', $user['id']);
             session()->set('user_role', $user['role']);
             session()->set('user_name', $user['name']);
             return true;
         }
 
+        // Password salah
         return false;
     }
 
     /**
-     * Logs out the current user by destroying the entire session.
+     * Logout user dengan menghapus session.
      */
     public function logout()
     {
@@ -56,9 +54,8 @@ class AuthService
     }
 
     /**
-     * Retrieves the data of the currently logged-in user.
-     * 
-     * @return array|null User data array or null if not logged in.
+     * Ambil data user yang sedang login saat ini.
+     * Return null kalau belum login.
      */
     public function user()
     {
@@ -69,7 +66,7 @@ class AuthService
     }
 
     /**
-     * Checks if a user is currently logged in.
+     * Cek apakah user sedang login.
      */
     public function check(): bool
     {
@@ -77,7 +74,7 @@ class AuthService
     }
 
     /**
-     * Checks if the logged-in user has the 'admin' role.
+     * Cek apakah user yang login adalah admin.
      */
     public function isAdmin(): bool
     {
@@ -85,7 +82,7 @@ class AuthService
     }
 
     /**
-     * Checks if the logged-in user has the 'customer' role.
+     * Cek apakah user yang login adalah customer.
      */
     public function isCustomer(): bool
     {

@@ -6,38 +6,40 @@ use App\Controllers\BaseController;
 use App\Models\VideoModel;
 use App\Actions\Video\RequestVideoAccessAction;
 use App\Services\VideoAccessService;
+use App\Models\VideoAccessRequestModel;
 
 /**
- * VideoController (Customer)
- * 
- * Handles the video experience for customers, including browsing, 
- * requesting access, watching, and streaming file-based content.
+ * Controller untuk menangani fitur video di sisi Customer.
+ * Termasuk browsing daftar video, request akses, dan streaming.
  */
 class VideoController extends BaseController
 {
     /**
-     * Lists all videos and shows the user's specific access status for each.
-     * Uses optimized LEFT JOIN query to prevent N+1 performance issues.
+     * Tampilkan daftar video beserta status aksesnya.
      */
     public function index()
     {
         helper(['video', 'url']);
+        // Inisialisasi model dan service
         $videoModel = new VideoModel();
         $accessService = new VideoAccessService();
         $userId = session()->get('user_id');
-
-        $search = $this->request->getGet('q');
-        // Fetch videos along with this user's latest request status in ONE query.
-        $videos = $videoModel->getVideosWithAccess($userId, $search);
         
+        // Ambil data video sekaligus status akses user (biar gak N+1 query)
+        // Parameter search dihapus karena fitur search sudah tidak digunakan
+        $videos = $videoModel->getVideosWithAccess($userId);
+        
+        // Loop setiap video untuk cek status expire dan thumbnail
         foreach ($videos as &$video) {
             $status = $video['access_status'] ?? 'none';
-            // Check if approval has already past its expiration date.
+            // Cek apakah akses 'approved' sudah lewat tanggal expired
             $isExpired = ($status === 'approved' && $video['expired_at'] && $accessService->isExpired($video['expired_at']));
             
+            // Update status jadi 'expired' jika sudah kadaluarsa
             $video['access_status'] = $isExpired ? 'expired' : $status;
+            // Flag helper untuk di view
             $video['has_active_access'] = ($status === 'approved' && !$isExpired);
-            // Thumbnails extracted via video_helper.php
+            // Ambil thumbnail dari YouTube atau generate default
             $video['thumbnail_url'] = get_youtube_thumbnail($video['video_path']);
         }
 
@@ -49,30 +51,33 @@ class VideoController extends BaseController
     }
 
     /**
-     * Triggers a new access request for a specific video.
+     * Handle request akses video oleh customer.
      */
     public function requestAccess($videoId)
     {
         $userId = session()->get('user_id');
         $action = new RequestVideoAccessAction();
 
-        // Business logic is encapsulated inside the Action class.
+        // Panggil Action untuk memproses request (cek duplikasi dll)
         if ($action->execute($userId, $videoId)) {
+            // Berhasil request
             return redirect()->back()->with('success', 'Access requested successfully. Please wait for admin approval.');
         }
 
+        // Gagal request
         return redirect()->back()->with('error', 'Failed to request access.');
     }
 
     /**
-     * The principal "Watch" page. Verified by active access status.
+     * Halaman nonton video (Watch page).
+     * Hanya bisa diakses jika punya izin aktif.
      */
     public function watch($videoId)
     {
         $userId = session()->get('user_id');
         $accessService = new VideoAccessService();
 
-        // Security check: Customer MUST have active access to even view the page.
+        // Cek keamanan: User HARUS punya akses aktif
         if (!$accessService->hasActiveAccess($userId, $videoId)) {
             return redirect()->to('/customer/videos')->with('error', 'You do not have active access to this video.');
         }
@@ -84,8 +89,8 @@ class VideoController extends BaseController
             return redirect()->to('/customer/videos')->with('error', 'Video not found.');
         }
 
-        // Fetch the active request to pass the exact expiration timestamp for the countdown.
-        $requestModel = new \App\Models\VideoAccessRequestModel();
+        // Ambil data request untuk mendapatkan tanggal expired yang akurat
+        $requestModel = new VideoAccessRequestModel();
         $accessRequest = $requestModel->where([
             'user_id'  => $userId,
             'video_id' => $videoId,
@@ -94,7 +99,7 @@ class VideoController extends BaseController
 
         $data = [
             'video'      => $video,
-            // Format for JS-friendly ISO string.
+            // Format tanggal expired ke ISO 8601 biar mudah diparsing JS (countdown timer)
             'expired_at' => $accessRequest ? date('c', strtotime($accessRequest['expired_at'])) : null
         ];
 
@@ -102,15 +107,15 @@ class VideoController extends BaseController
     }
 
     /**
-     * Secure Streaming Endpoint.
-     * Prevents direct file access and handles both external URLs and local files.
+     * Endpoint streaming video.
+     * Menghandle redirect ke URL eksternal (YouTube).
      */
     public function stream($videoId)
     {
         $userId = session()->get('user_id');
         $accessService = new VideoAccessService();
 
-        // 1. Authorization check before any file manipulation.
+        // 1. Cek otorisasi ulang sebelum stream
         if (!$accessService->hasActiveAccess($userId, $videoId)) {
             return $this->response->setStatusCode(403)->setBody('Access Denied');
         }
@@ -122,42 +127,17 @@ class VideoController extends BaseController
             return $this->response->setStatusCode(404)->setBody('Video not found');
         }
 
-        // 2. Handle External URLs: Simply redirect to the source.
+        // 2. Redirect ke URL video external
         if (filter_var($video['video_path'], FILTER_VALIDATE_URL)) {
              return redirect()->to($video['video_path']);
         }
-
-        // 3. Handle Local Files: Ensure path is valid.
-        $path = $video['video_path'];
-        if (!is_file($path)) {
-            $path = WRITEPATH . 'uploads/' . $video['video_path'];
-        }
-
-        if (!is_file($path)) {
-            return $this->response->setStatusCode(404)->setBody('File not found');
-        }
-
-        $mime = mime_content_type($path);
-        $size = filesize($path);
         
-        // 4. Memory-Efficient Streaming: 
-        // We bypass CI4's Response object slightly to use native PHP functions 
-        // that stream the file line-by-line instead of loading 1GB into RAM.
-        header('Content-Type: ' . $mime);
-        header('Content-Length: ' . $size);
-        header('Accept-Ranges: bytes');
-        header('Cache-Control: no-cache, must-revalidate');
-        
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-        
-        readfile($path);
-        exit;
+        // Return 404 jika bukan URL.
+        return $this->response->setStatusCode(404)->setBody('Video source not valid');
     }
 
     /**
-     * Helper for HTMX to refresh the video grid.
+     * Helper untuk refresh daftar video via HTMX.
      */
     public function listRows()
     {
@@ -166,9 +146,9 @@ class VideoController extends BaseController
         $accessService = new VideoAccessService();
         $userId = session()->get('user_id');
 
-        $search = $this->request->getGet('q');
-        $videos = $videoModel->getVideosWithAccess($userId, $search);
+        $videos = $videoModel->getVideosWithAccess($userId);
         
+        // Logic sama seperti index, proses status akses
         foreach ($videos as &$video) {
             $status = $video['access_status'] ?? 'none';
             $isExpired = ($status === 'approved' && $video['expired_at'] && $accessService->isExpired($video['expired_at']));

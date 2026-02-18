@@ -5,9 +5,8 @@ namespace App\Models;
 use CodeIgniter\Model;
 
 /**
- * VideoModel
- * 
- * Manages the 'videos' table.
+ * Model Video
+ * Mengelola tabel 'videos'.
  */
 class VideoModel extends Model
 {
@@ -17,30 +16,22 @@ class VideoModel extends Model
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['title', 'description', 'video_path', 'duration']; // Added missing allowedFields
+    protected $allowedFields    = ['title', 'description', 'video_path', 'duration']; 
     protected $updatedField     = 'updated_at';
 
     /**
-     * Optimized query to fetch all videos along with a specific user's access status.
-     * This avoids the N+1 problem where we would otherwise have to query 
-     * the status for each video in a loop.
-     * 
-     * @param int $userId The current logged-in customer.
-     * @param string|null $search Optional search filter for title or description.
-     * @return array
+     * Ambil data video sekaligus status akses-nya untuk user tertentu.
+     * Menggunakan correlated subquery biar gak N+1 dan menghindari duplikasi row.
      */
-    public function getVideosWithAccess(int $userId, ?string $search = null)
+    public function getVideosWithAccess(int $userId)
     {
-        // We use a LEFT JOIN so that videos without any request still appear in the list.
-        $builder = $this->select('videos.*, r.status as access_status, r.expired_at')
-                        ->join('video_access_requests r', "r.video_id = videos.id AND r.user_id = {$userId}", 'left');
-
-        if ($search) {
-            $builder->groupStart()
-                    ->like('videos.title', $search)
-                    ->orLike('videos.description', $search)
-                    ->groupEnd();
-        }
+        // Query Builder dimulai dari tabel videos
+        // Kita select semua kolom video, plus status & expired_at dari request terakhir user ini.
+        // Pake Correlated Subquery di SELECT biar efisien dan gak duplikat row kayak kalau pake JOIN biasan.
+        $builder = $this->select('videos.*, 
+            (SELECT status FROM video_access_requests WHERE video_id = videos.id AND user_id = ' . $this->db->escape($userId) . ' ORDER BY created_at DESC LIMIT 1) as access_status,
+            (SELECT expired_at FROM video_access_requests WHERE video_id = videos.id AND user_id = ' . $this->db->escape($userId) . ' ORDER BY created_at DESC LIMIT 1) as expired_at
+        ');
 
         return $builder->findAll();
     }

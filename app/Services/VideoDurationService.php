@@ -5,33 +5,27 @@ namespace App\Services;
 use CodeIgniter\I18n\Time;
 
 /**
- * VideoDurationService
+ * Service Hitung Durasi
  * 
- * This service handles time-based calculations for video access.
- * It primarily manages expiration string parsing and duration formatting.
+ * Menangani perhitungan waktu akses video.
+ * Fokus utamanya adalah ngitung tanggal expired dan format waktu.
  */
 class VideoDurationService
 {
     /**
-     * Calculate expiry time based on approval time and duration in hours and minutes.
-     *
-     * @param string $approvedAt The start time (usually now).
-     * @param int $durationHours
-     * @param int $durationMinutes
-     * @return string Future timestamp in 'Y-m-d H:i:s' format.
+     * Hitung tanggal kadaluarsa berdasarkan waktu approve dan durasi yang dikasih.
+     * Retun format datetime string buat disimpan ke database.
      */
     public function calculateExpiry(string $approvedAt, int $durationHours, int $durationMinutes = 0): string
     {
         $time = Time::parse($approvedAt);
+        // Tambahkan jam dan menit ke waktu approve
         return $time->addHours($durationHours)->addMinutes($durationMinutes)->toDateTimeString();
     }
 
     /**
-     * Placeholder for video metadata extraction.
-     * Currently returns 0 as YouTube/External URLs don't need local duration checks.
-     *
-     * @param string $filePath
-     * @return int
+     * Placeholder untuk ambil durasi video (jika nanti dibutuhkan).
+     * Saat ini return 0 karena kita pakai YouTube/URL Eksternal
      */
     public function getDuration(string $filePath): int
     {
@@ -42,14 +36,12 @@ class VideoDurationService
     }
 
     /**
-     * Check if a given "expired_at" timestamp is in the past compared to right now.
-     *
-     * @param string $expiredAt
-     * @return bool True if expired, false if still valid.
+     * Cek apakah waktu tertentu sudah lewat (expired) dibanding waktu sekarang.
      */
     public function isExpired(string $expiredAt): bool
     {
         $expiry = Time::parse($expiredAt);
+        // Cek apakah $expiry < waktu sekarang
         return $expiry->isBefore(Time::now());
     }
 }

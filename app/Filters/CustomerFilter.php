@@ -7,33 +7,27 @@ use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 
 /**
- * CustomerFilter
- * 
- * Secure filter that only allows users with the 'customer' role.
- * Similar to AdminFilter but tailored for customer-only areas.
+ * Filter khusus Customer
+ * Menjaga route agar hanya bisa diakses oleh user dengan role 'customer'.
  */
 class CustomerFilter implements FilterInterface
 {
-    /**
-     * Pre-checks the request for customer permissions.
-     */
     public function before(RequestInterface $request, $arguments = null)
     {
-        // 1. Must be logged in.
+        // 1. Cek User Login
         if (!session()->has('user_id')) {
             return redirect()->to('/login')->with('error', 'Please login to continue.');
         }
 
-        // 2. Must specifically have the 'customer' role.
+        // 2. Cek apakah role user adalah 'customer'
         if (session()->get('user_role') !== 'customer') {
-            // Throwing a 404 is a security best practice to avoid 
-            // leaking route info to unauthorized users.
+            // Jika bukan customer, lempar 404 (Security through obscurity)
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         }
     }
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        // No post-processing needed.
+        // Tidak ada proses setelah request
     }
 }

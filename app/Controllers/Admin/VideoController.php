@@ -6,26 +6,25 @@ use App\Controllers\BaseController;
 use App\Models\VideoModel;
 
 /**
- * VideoController (Admin)
- * 
- * Manages the video library from the administrator's perspective.
- * Handles listing, adding, updating, and deleting video entries.
+ * Controller untuk mengelola data video (Admin).
  */
 class VideoController extends BaseController
 {
     /**
-     * Display the main video management table.
+     * Tampilkan halaman manajemen video.
      */
     public function index()
     {
+        // Inisialisasi model video
         $videoModel = new VideoModel();
+        // Ambil semua data video
         $data['videos'] = $videoModel->findAll();
-        // Renders the full page layout for standard requests.
+        // Tampilkan view utama
         return view('admin/videos/index', $data);
     }
 
     /**
-     * Show the creation form (usually rendered inside a modal).
+     * Tampilkan form pembuatan video (via modal).
      */
     public function create()
     {
@@ -33,52 +32,62 @@ class VideoController extends BaseController
     }
 
     /**
-     * Handles both creation and update logic based on the presence of an 'id'.
+     * Simpan data video baru (Create).
+     * 
+     * HTMX Support:
+     * - Refresh parsial daftar video.
+     * - Trigger toast 'Video added'.
+     * - Trigger event 'videoSaved' buat nutup modal.
      */
     public function store()
     {
-        // Basic validation for title and description.
+        // Jika ada ID, berarti update, lempar ke method update
+        if ($this->request->getPost('id')) {
+            return $this->update($this->request->getPost('id'));
+        }
+
+        // Aturan validasi
         $rules = [
             'title'       => 'required|min_length[3]',
             'description' => 'required',
         ];
 
-        // If 'id' is present, we pivot to the update method.
-        if ($this->request->getPost('id')) {
-            return $this->update($this->request->getPost('id'));
-        }
-
-        // Validate standard input.
+        // Jalankan validasi
         if (!$this->validate($rules)) {
+            // Jika gagal, kembalikan dengan error & buka modal create lagi
             return redirect()->to('/admin/videos')->withInput()->with('errors', $this->validator->getErrors())->with('show_create_modal', true);
         }
 
-        // Check if the provided video path is a valid URL (e.g., YouTube).
+        // Validasi format URL video
         $videoPath = $this->request->getPost('video_url');
         if (!filter_var($videoPath, FILTER_VALIDATE_URL)) {
             return redirect()->to('/admin/videos')->withInput()->with('error', 'Invalid Video URL')->with('show_create_modal', true);
         }
 
+        // Siapkan data simpan
         $videoModel = new VideoModel();
         $data = [
             'title'       => $this->request->getPost('title'),
             'description' => $this->request->getPost('description'),
             'video_path'  => $videoPath,
-            'duration'    => 0 // Placeholder for duration calculation
+            'duration'    => 0 // Placeholder durasi, nanti bisa dihitung otomatis
         ];
 
+        // Simpan ke database
         if ($videoModel->insert($data)) {
-            // HTMX Support: If it's an AJAX request, we return just the updated table rows 
-            // and trigger a success toast via headers.
+            // Cek HTMX Request
             if ($this->request->hasHeader('HX-Request')) {
+                // Ambil data terbaru
                 $viewData['videos'] = $videoModel->findAll();
+                // Kirim balik partial view, trigger toast & event tutup modal
                 return $this->response
                     ->setHeader('HX-Trigger', json_encode([
                         'showToast' => ['message' => 'Video added successfully.', 'type' => 'success'],
-                        'videoSaved' => true // Custom event for Alpine.js to close modals
+                        'videoSaved' => true 
                     ]))
                     ->setBody(view('admin/videos/_rows', $viewData));
             }
+            // Fallback non-HTMX
             return redirect()->to('/admin/videos')->with('success', 'Video added successfully.');
         }
 
@@ -86,23 +95,27 @@ class VideoController extends BaseController
     }
 
     /**
-     * Updates an existing video entry.
+     * Update data video.
+     * HTMX Support: Refresh list & Notifikasi.
      */
     public function update($id)
     {
         $videoModel = new VideoModel();
+        // Cari video berdasarkan ID
         $video = $videoModel->find($id);
 
         if (!$video) {
             return redirect()->to('/admin/videos')->with('error', 'Video not found.');
         }
 
+        // Validasi update
         $rules = [
             'title'       => 'required|min_length[3]',
             'description' => 'required',
         ];
 
         if (!$this->validate($rules)) {
+            // Jika gagal, kembalikan error & buka modal edit lagi
              return redirect()->to('/admin/videos')
                 ->withInput()
                 ->with('errors', $this->validator->getErrors())
@@ -110,19 +123,24 @@ class VideoController extends BaseController
                 ->with('edit_video_id', $id);
         }
 
+        // Siapkan data update
         $data = [
             'title'       => $this->request->getPost('title'),
             'description' => $this->request->getPost('description'),
         ];
         
+        // Update URL video cuma kalau diisi
         if ($this->request->getPost('video_url')) {
              $data['video_path'] = $this->request->getPost('video_url');
         }
 
+        // Proses update database
         if ($videoModel->update($id, $data)) {
-            // HTMX Support: Returns only the table rows for a seamless partial update.
+            // Cek HTMX Request
             if ($this->request->hasHeader('HX-Request')) {
+                // Ambil data terbaru
                 $viewData['videos'] = $videoModel->findAll();
+                // Kirim respon update ui & trigger notifikasi
                 return $this->response
                     ->setHeader('HX-Trigger', json_encode([
                         'showToast' => ['message' => 'Video updated successfully.', 'type' => 'success'],
@@ -137,18 +155,21 @@ class VideoController extends BaseController
     }
 
     /**
-     * Deletes a video entry.
+     * Hapus video.
+     * HTMX Support: Hapus elemen tabel & Notifikasi.
      */
     public function delete($id)
     {
         $videoModel = new VideoModel();
+        // Eksekusi delete
         if ($videoModel->delete($id)) {
+            // Jika HTMX, kirim respon kosong untuk hapus elemen UI
             if ($this->request->hasHeader('HX-Request')) {
                 return $this->response
                     ->setHeader('HX-Trigger', json_encode([
                         'showToast' => ['message' => 'Video deleted successfully.', 'type' => 'success']
                     ]))
-                    ->setBody(''); // Return empty for HTMX to remove the row
+                    ->setBody(''); 
             }
             return redirect()->to('/admin/videos')->with('success', 'Video deleted successfully.');
         }
@@ -156,12 +177,15 @@ class VideoController extends BaseController
     }
 
     /**
-     * Helper for HTMX to fetch only the table rows without the full layout.
+     * Helper list rows untuk refresh tabel via HTMX.
      */
     public function listRows()
     {
+        // Inisialisasi model
         $videoModel = new VideoModel();
+        // Ambil semua data video terbaru tanpa filter search (karena fitur dihapus)
         $data['videos'] = $videoModel->findAll();
+        // Return partial view
         return view('admin/videos/_rows', $data);
     }
 }
