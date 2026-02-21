@@ -5,7 +5,7 @@
 [![JS](https://img.shields.io/badge/Frontend-Alpine.js%20%26%20Alpine%20AJAX-000000?style=for-the-badge&logo=alpine.js&logoColor=white)](https://alpinejs.dev)
 
 
-Repositori ini berisi solusi untuk tugas technical test "Web Developer" dari Mediatama. Proyek ini dibangun dengan standar profesional menggunakan **Clean Architecture**, keamanan berlapis, dan pengalaman pengguna (UX) berperforma tinggi.
+Proyek ini dibangun dengan standar profesional menggunakan **Clean Architecture**, keamanan berlapis, dan pengalaman pengguna (UX) berperforma tinggi.
 
 ---
 
