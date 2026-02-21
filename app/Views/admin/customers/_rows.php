@@ -26,7 +26,7 @@
         </td>
         <td class="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-right text-[10px] lg:text-sm font-medium">
             <button type="button" @click='openEditModal(<?= json_encode($customer) ?>)' class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 lg:px-3 py-1 lg:py-1.5 rounded-lg mr-1 lg:mr-2 hover:bg-indigo-100 transition-colors">Edit</button>
-            <button hx-get="<?= base_url('admin/customers/delete/' . $customer['id']) ?>" hx-confirm="Are you sure you want to delete this customer?" hx-target="closest tr" hx-swap="outerHTML" class="text-red-600 hover:text-red-900 bg-red-50 px-2 lg:px-3 py-1 lg:py-1.5 rounded-lg hover:bg-red-100 transition-colors">Delete</button>
+            <button type="button" @click="if(confirm('Are you sure you want to delete this customer?')) { $ajax('<?= base_url('admin/customers/delete/' . $customer['id']) ?>', { target: 'main-content' }) }" class="text-red-600 hover:text-red-900 bg-red-50 px-2 lg:px-3 py-1 lg:py-1.5 rounded-lg hover:bg-red-100 transition-colors">Delete</button>
         </td>
     </tr>
 <?php endforeach; ?>

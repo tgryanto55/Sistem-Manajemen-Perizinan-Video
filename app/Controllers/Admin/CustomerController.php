@@ -63,20 +63,6 @@ class CustomerController extends BaseController
 
         // Eksekusi action
         if ($action->execute($data)) {
-            // Cek apakah request dari HTMX
-            if ($this->request->hasHeader('HX-Request')) {
-                $userModel = new UserModel();
-                // Siapkan data terbaru untuk dirender ulang (refresh list)
-                $viewData['customers'] = $userModel->where('role', 'customer')->findAll();
-                // Kirim balik partial view, trigger toast, dan event tutup modal
-                return $this->response
-                    ->setHeader('HX-Trigger', json_encode([
-                        'showToast' => ['message' => 'Customer created successfully.', 'type' => 'success'],
-                        'customerSaved' => true 
-                    ]))
-                    ->setBody(view('admin/customers/_rows', $viewData));
-            }
-            // Fallback untuk non-HTMX
             return redirect()->to('/admin/customers')->with('success', 'Customer created successfully.');
         }
 
@@ -131,18 +117,6 @@ class CustomerController extends BaseController
 
         // Proses update ke database
         if ($userModel->update($id, $data)) {
-            // Cek HTMX request
-            if ($this->request->hasHeader('HX-Request')) {
-                // Ambil data terbaru
-                $viewData['customers'] = $userModel->where('role', 'customer')->findAll();
-                // Kirim respon update tabel dan trigger
-                return $this->response
-                    ->setHeader('HX-Trigger', json_encode([
-                        'showToast' => ['message' => 'Customer updated successfully.', 'type' => 'success'],
-                        'customerSaved' => true
-                    ]))
-                    ->setBody(view('admin/customers/_rows', $viewData));
-            }
             return redirect()->to('/admin/customers')->with('success', 'Customer updated successfully.');
         }
 
@@ -158,27 +132,10 @@ class CustomerController extends BaseController
         $userModel = new UserModel();
         // Eksekusi delete
         if ($userModel->delete($id)) {
-            // Jika HTMX, kirim respon kosong untuk hapus elemen UI
-            if ($this->request->hasHeader('HX-Request')) {
-                return $this->response
-                    ->setHeader('HX-Trigger', json_encode([
-                        'showToast' => ['message' => 'Customer deleted successfully.', 'type' => 'success']
-                    ]))
-                    ->setBody('');
-            }
             return redirect()->to('/admin/customers')->with('success', 'Customer deleted successfully.');
         }
         return redirect()->to('/admin/customers')->with('error', 'Failed to delete customer.');
     }
 
-    /**
-     * Helper list rows untuk refresh tabel via HTMX.
-     */
-    public function listRows()
-    {
-        $userModel = new UserModel();
-        // Ambil data customer terbaru
-        $data['customers'] = $userModel->where('role', 'customer')->findAll();
-        return view('admin/customers/_rows', $data);
-    }
+
 }

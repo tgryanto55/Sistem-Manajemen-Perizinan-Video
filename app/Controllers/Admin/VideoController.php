@@ -75,19 +75,6 @@ class VideoController extends BaseController
 
         // Simpan ke database
         if ($videoModel->insert($data)) {
-            // Cek HTMX Request
-            if ($this->request->hasHeader('HX-Request')) {
-                // Ambil data terbaru
-                $viewData['videos'] = $videoModel->findAll();
-                // Kirim balik partial view, trigger toast & event tutup modal
-                return $this->response
-                    ->setHeader('HX-Trigger', json_encode([
-                        'showToast' => ['message' => 'Video added successfully.', 'type' => 'success'],
-                        'videoSaved' => true 
-                    ]))
-                    ->setBody(view('admin/videos/_rows', $viewData));
-            }
-            // Fallback non-HTMX
             return redirect()->to('/admin/videos')->with('success', 'Video added successfully.');
         }
 
@@ -136,18 +123,6 @@ class VideoController extends BaseController
 
         // Proses update database
         if ($videoModel->update($id, $data)) {
-            // Cek HTMX Request
-            if ($this->request->hasHeader('HX-Request')) {
-                // Ambil data terbaru
-                $viewData['videos'] = $videoModel->findAll();
-                // Kirim respon update ui & trigger notifikasi
-                return $this->response
-                    ->setHeader('HX-Trigger', json_encode([
-                        'showToast' => ['message' => 'Video updated successfully.', 'type' => 'success'],
-                        'videoSaved' => true
-                    ]))
-                    ->setBody(view('admin/videos/_rows', $viewData));
-            }
             return redirect()->to('/admin/videos')->with('success', 'Video updated successfully.');
         }
 
@@ -163,29 +138,10 @@ class VideoController extends BaseController
         $videoModel = new VideoModel();
         // Eksekusi delete
         if ($videoModel->delete($id)) {
-            // Jika HTMX, kirim respon kosong untuk hapus elemen UI
-            if ($this->request->hasHeader('HX-Request')) {
-                return $this->response
-                    ->setHeader('HX-Trigger', json_encode([
-                        'showToast' => ['message' => 'Video deleted successfully.', 'type' => 'success']
-                    ]))
-                    ->setBody(''); 
-            }
             return redirect()->to('/admin/videos')->with('success', 'Video deleted successfully.');
         }
         return redirect()->to('/admin/videos')->with('error', 'Failed to delete video.');
     }
 
-    /**
-     * Helper list rows untuk refresh tabel via HTMX.
-     */
-    public function listRows()
-    {
-        // Inisialisasi model
-        $videoModel = new VideoModel();
-        // Ambil semua data video terbaru tanpa filter search (karena fitur dihapus)
-        $data['videos'] = $videoModel->findAll();
-        // Return partial view
-        return view('admin/videos/_rows', $data);
-    }
+
 }

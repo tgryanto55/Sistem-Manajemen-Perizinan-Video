@@ -18,7 +18,7 @@
             <p class="mt-1 text-sm text-gray-500">Video library is currently empty.</p>
         </div>
     <?php else: ?>
-        <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-8" hx-get="<?= base_url('customer/videos/rows') ?>" hx-trigger="every 5s">
+        <div id="customer-videos-grid" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-8" x-init="setInterval(() => { $ajax('<?= current_url() ?>', { target: 'customer-videos-grid' }) }, 5000)">
             <?= $this->include('customer/videos/_rows') ?>
         </div>
     <?php endif; ?>

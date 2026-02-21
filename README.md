@@ -2,7 +2,7 @@
 
 [![Framework](https://img.shields.io/badge/Framework-CodeIgniter%204.7-EF4444?style=for-the-badge&logo=codeigniter&logoColor=white)](https://codeigniter.com)
 [![Styling](https://img.shields.io/badge/CSS-Tailwind%204.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
-[![JS](https://img.shields.io/badge/Frontend-Alpine.js%20%26%20HTMX-000000?style=for-the-badge&logo=alpine.js&logoColor=white)](https://alpinejs.dev)
+[![JS](https://img.shields.io/badge/Frontend-Alpine.js%20%26%20Alpine%20AJAX-000000?style=for-the-badge&logo=alpine.js&logoColor=white)](https://alpinejs.dev)
 
 
 Repositori ini berisi solusi untuk tugas technical test "Web Developer" dari Mediatama. Proyek ini dibangun dengan standar profesional menggunakan **Clean Architecture**, keamanan berlapis, dan pengalaman pengguna (UX) berperforma tinggi.
@@ -30,11 +30,11 @@ Sistem ini telah memenuhi seluruh kriteria yang diminta dalam soal:
 -   **Action Pattern (`app/Actions`)**: Memisahkan logika penulisan (write operations) dari Controller agar kode lebih rapi dan mudah diuji.
 -   **Service Layer (`app/Services`)**: Pusat logika domain seperti pengecekan izin akses dan kalkulasi waktu kedaluwarsa.
 -   **Optimasi Database**: Menggunakan query `LEFT JOIN` (lihat `VideoModel`) untuk mengatasi masalah **N+1 problem**, memastikan sistem tetap cepat meski data bertambah banyak.
--   **Keamanan Global**: Proteksi CSRF diaktifkan secara global, termasuk integrasi dengan header AJAX **HTMX**.
+-   **Keamanan Global**: Proteksi CSRF diaktifkan secara global, termasuk integrasi dengan header **Alpine AJAX**.
 
 ### Stack Teknologi Modern
--   **HTMX**: Memberikan pengalaman Single Page Application (SPA) tanpa beban berat JavaScript Framework.
--   **Alpine.js**: Digunakan untuk interaktivitas ringan seperti Modal, Toast Notifications, dan Real-time Counter.
+-   **Alpine AJAX**: Memberikan pengalaman Single Page Application (SPA) dinamis dan deklaratif langsung dari HTML, menggantikan HTMX.
+-   **Alpine.js**: Digunakan untuk interaktivitas ringan, pengelolaan state UI, Toast Notifications, dan Real-time Counter.
 -   **Tailwind CSS v4**: Desain modern dan responsif dengan fitur-fitur CSS terbaru.
 
 ---
@@ -119,7 +119,7 @@ app/
 - **PHP**: `^8.2` (aktifkan ekstensi `intl`, `mbstring`, `gd`)
 - **Composer**: Manajemen dependensi PHP
 - **Node.js & NPM**: Untuk kompilasi aset (Tailwind & Esbuild)
-- **Database**: MySQL/MariaDB
+- **Database**: MySQL/MariaDB (Bisa menggunakan Laragon atau XAMPP)
 
 ### 2. Cara Instal
 ```bash

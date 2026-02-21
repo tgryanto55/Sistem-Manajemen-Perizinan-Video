@@ -33,7 +33,7 @@
         <td class="px-4 lg:px-6 py-3 lg:py-4 pr-8 lg:pr-12 whitespace-nowrap text-right text-[10px] lg:text-sm font-medium">
             <?php if ($request['status'] === 'pending'): ?>
                 <div class="flex items-center justify-end space-x-2 lg:space-x-3" x-data="{ h: 24, m: 0 }">
-                    <form hx-post="<?= base_url('admin/requests/approve/' . $request['id']) ?>" @submit="$dispatch('edit-stopped')" hx-target="closest tr" hx-swap="outerHTML" class="flex items-center space-x-2 lg:space-x-4">
+                    <form action="<?= base_url('admin/requests/approve/' . $request['id']) ?>" method="post" x-target="main-content" @submit="$dispatch('edit-stopped')" class="flex items-center space-x-2 lg:space-x-4">
                         <?= csrf_field() ?>
                         <!-- Clock Style Input (Larger for Touch) -->
                         <div class="flex items-center bg-gray-50 border border-gray-200 rounded-2xl px-3 lg:px-4 py-2 lg:py-3 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 group transition-all shadow-sm">
@@ -47,7 +47,7 @@
                         </button>
                     </form>
                     <div class="h-10 w-px bg-gray-200 mx-1"></div>
-                    <form hx-post="<?= base_url('admin/requests/reject/' . $request['id']) ?>" hx-target="closest tr" hx-swap="outerHTML">
+                    <form action="<?= base_url('admin/requests/reject/' . $request['id']) ?>" method="post" x-target="main-content">
                         <?= csrf_field() ?>
                         <button type="submit" class="bg-white text-red-600 hover:bg-red-50 p-3 lg:px-5 lg:py-4 rounded-2xl transition-all border border-red-100 hover:border-red-200 shadow-sm active:scale-95" title="Reject">
                             <svg class="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -71,13 +71,13 @@
                             <button @click="isEditing = true; $dispatch('edit-started')" class="p-2.5 lg:p-3 text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all border border-transparent hover:border-indigo-100" title="Edit Duration">
                                 <svg class="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
-                            <button hx-get="<?= base_url('admin/requests/delete/' . $request['id']) ?>" hx-confirm="Revoke this access?" hx-target="closest tr" hx-swap="outerHTML" class="p-2.5 lg:p-3 text-red-600 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100" title="Revoke Access">
+                            <button type="button" @click="if(confirm('Revoke this access?')) { $ajax('<?= base_url('admin/requests/delete/' . $request['id']) ?>', { target: 'main-content' }) }" class="p-2.5 lg:p-3 text-red-600 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100" title="Revoke Access">
                                 <svg class="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </div>
                     </div>
                     
-                    <form x-show="isEditing" x-cloak hx-post="<?= base_url('admin/requests/update/' . $request['id']) ?>" @submit="$dispatch('edit-stopped')" hx-target="closest tr" hx-swap="outerHTML" class="flex items-center justify-end space-x-2 lg:space-x-4">
+                    <form x-show="isEditing" x-cloak action="<?= base_url('admin/requests/update/' . $request['id']) ?>" method="post" x-target="main-content" @submit="$dispatch('edit-stopped')" class="flex items-center justify-end space-x-2 lg:space-x-4">
                         <?= csrf_field() ?>
                         <!-- Clock Style Input (Larger for Touch) -->
                         <div class="flex items-center bg-white border border-gray-200 rounded-2xl px-3 lg:px-4 py-2 lg:py-3 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 group transition-all shadow-sm">
@@ -97,7 +97,7 @@
                 </div>
             <?php else: ?>
                 <div class="flex justify-end">
-                    <button hx-get="<?= base_url('admin/requests/delete/' . $request['id']) ?>" hx-confirm="Remove this record?" hx-target="closest tr" hx-swap="outerHTML" class="text-gray-400 hover:text-red-600 text-[10px] lg:text-xs transition-colors font-medium">Remove Record</button>
+                    <button type="button" @click="if(confirm('Remove this record?')) { $ajax('<?= base_url('admin/requests/delete/' . $request['id']) ?>', { target: 'main-content' }) }" class="text-gray-400 hover:text-red-600 text-[10px] lg:text-xs transition-colors font-medium">Remove Record</button>
                 </div>
             <?php endif; ?>
         </td>

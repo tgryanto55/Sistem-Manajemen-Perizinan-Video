@@ -23,7 +23,7 @@
                     </div>
                 </div>
             <?php else: ?>
-                <form action="<?= base_url('customer/videos/request/' . $video['id']) ?>" method="POST" class="absolute inset-0 z-10">
+                <form action="<?= base_url('customer/videos/request/' . $video['id']) ?>" method="POST" x-target="main-content" class="absolute inset-0 z-10">
                     <?= csrf_field() ?>
                     <button type="submit" class="w-full h-full flex items-center justify-center group/btn">
                         <div class="w-12 h-12 lg:w-16 lg:h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white group-hover/btn:bg-white group-hover/btn:text-indigo-600 group-hover:scale-110 transition-all duration-300 shadow-xl">
@@ -70,7 +70,7 @@
                         Pending
                     </button>
                 <?php else: ?>
-                    <form action="<?= base_url('customer/videos/request/' . $video['id']) ?>" method="POST">
+                    <form action="<?= base_url('customer/videos/request/' . $video['id']) ?>" method="POST" x-target="main-content">
                         <?= csrf_field() ?>
                         <button type="submit" class="block w-full py-1.5 lg:py-2.5 px-3 lg:px-4 bg-white border border-gray-900 hover:bg-gray-900 hover:text-white text-gray-900 text-center text-[10px] lg:text-sm font-bold rounded-lg lg:rounded-xl transition-colors">
                             Request

@@ -41,19 +41,16 @@ class AccessRequestController extends BaseController
         // Panggil action untuk proses approve
         $action = new ApproveVideoAccessAction();
 
-        if ($action->execute($id, $durationH, $durationM)) {
-            // Cek apakah request dari HTMX
-            if ($this->request->hasHeader('HX-Request')) {
-                $requestModel = new VideoAccessRequestModel();
-                // Ambil data terbaru untuk baris tabel yang diupdate
-                $data['requests'] = [$requestModel->getRequestWithDetails($id)];
-                // Kirim balik partial view dan trigger toast notifikasi
-                return $this->response
-                    ->setHeader('HX-Trigger', json_encode(['showToast' => ['message' => 'Request approved successfully.', 'type' => 'success']]))
-                    ->setBody(view('admin/requests/_rows', $data));
+        try {
+            if ($action->execute($id, $durationH, $durationM)) {
+                return redirect()->back()->with('success', 'Request approved successfully.');
             }
-            // Fallback untuk request biasa (non-HTMX)
-            return redirect()->back()->with('success', 'Request approved successfully.');
+        } catch (\CodeIgniter\Database\Exceptions\DatabaseException $e) {
+            log_message('error', '[ApproveAccess] Database error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Database error. Please try again.');
+        } catch (\Exception $e) {
+            log_message('error', '[ApproveAccess] General error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'An unexpected error occurred.');
         }
 
         return redirect()->back()->with('error', 'Failed to approve request.');
@@ -78,23 +75,19 @@ class AccessRequestController extends BaseController
             return redirect()->back()->with('error', 'Request not found.');
         }
 
-        // Hitung ulang waktu expired menggunakan service
-        $durationService = new \App\Services\VideoDurationService();
-        $approvedAt = $request['approved_at'] ?? \CodeIgniter\I18n\Time::now()->toDateTimeString();
-        $expiredAt  = $durationService->calculateExpiry($approvedAt, $durationH, $durationM);
+        try {
+            // Hitung ulang waktu expired menggunakan service
+            $durationService = new \App\Services\VideoDurationService();
+            $approvedAt = $request['approved_at'] ?? \CodeIgniter\I18n\Time::now()->toDateTimeString();
+            $expiredAt  = $durationService->calculateExpiry($approvedAt, $durationH, $durationM);
 
-        // Update data expired_at di database
-        if ($requestModel->update($id, ['expired_at' => $expiredAt])) {
-            // Cek apakah request dari HTMX
-            if ($this->request->hasHeader('HX-Request')) {
-                // Ambil data terbaru untuk update tampilan
-                $data['requests'] = [$requestModel->getRequestWithDetails($id)];
-                // Kirim response partial header dan body
-                return $this->response
-                    ->setHeader('HX-Trigger', json_encode(['showToast' => ['message' => 'Access duration updated.', 'type' => 'success']]))
-                    ->setBody(view('admin/requests/_rows', $data));
+            // Update data expired_at di database
+            if ($requestModel->update($id, ['expired_at' => $expiredAt])) {
+                return redirect()->back()->with('success', 'Access duration updated.');
             }
-            return redirect()->back()->with('success', 'Access duration updated.');
+        } catch (\CodeIgniter\Database\Exceptions\DatabaseException $e) {
+             log_message('error', '[UpdateAccess] Database error: ' . $e->getMessage());
+             return redirect()->back()->with('error', 'Database error.');
         }
 
         return redirect()->back()->with('error', 'Failed to update duration.');
@@ -109,12 +102,6 @@ class AccessRequestController extends BaseController
         $requestModel = new VideoAccessRequestModel();
         // Jalankan perintah delete
         if ($requestModel->delete($id)) {
-            // Jika request HTMX, kirim respon kosong untuk menghapus elemen DOM
-            if ($this->request->hasHeader('HX-Request')) {
-                return $this->response
-                    ->setHeader('HX-Trigger', json_encode(['showToast' => ['message' => 'Request removed.', 'type' => 'success']]))
-                    ->setBody('');
-            }
             return redirect()->back()->with('success', 'Request removed.');
         }
 
@@ -130,29 +117,17 @@ class AccessRequestController extends BaseController
         // Panggil action reject
         $action = new RejectVideoAccessAction();
 
-        if ($action->execute($id)) {
-            // Jika HTMX, kirim update baris tabel dengan status 'rejected'
-            if ($this->request->hasHeader('HX-Request')) {
-                $requestModel = new VideoAccessRequestModel();
-                $data['requests'] = [$requestModel->getRequestWithDetails($id)];
-                return $this->response
-                    ->setHeader('HX-Trigger', json_encode(['showToast' => ['message' => 'Request rejected.', 'type' => 'success']]))
-                    ->setBody(view('admin/requests/_rows', $data));
+        try {
+            if ($action->execute($id)) {
+                return redirect()->back()->with('success', 'Request rejected.');
             }
-            return redirect()->back()->with('success', 'Request rejected.');
+        } catch (\CodeIgniter\Database\Exceptions\DatabaseException $e) {
+            log_message('error', '[RejectAccess] Database error: ' . $e->getMessage());
+             return redirect()->back()->with('error', 'Database error.');
         }
 
         return redirect()->back()->with('error', 'Failed to reject request.');
     }
 
-    /**
-     * Helper list rows untuk refresh tabel via HTMX.
-     */
-    public function listRows()
-    {
-        $requestModel = new VideoAccessRequestModel();
-        // Ambil semua data request untuk dirender ulang
-        $data['requests'] = $requestModel->getRequestsWithDetails();
-        return view('admin/requests/_rows', $data);
-    }
+
 }

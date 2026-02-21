@@ -11,24 +11,18 @@
     <!-- Alpine.js Bundle -->
     <script src="<?= base_url('assets/js/bundle.js?v=' . time()) ?>" defer></script>
     
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    
-    <style>
-        [x-cloak] { display: none !important; }
-        .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
-        .htmx-request .htmx-indicator { opacity: 1; }
-        .htmx-request.htmx-indicator { opacity: 1; }
-    </style>
-
+    <!-- Alpine AJAX CSRF Token -->
     <meta name="<?= csrf_token() ?>" content="<?= csrf_hash() ?>" id="csrf-token">
     <script>
-        document.addEventListener('htmx:configRequest', (event) => {
-            event.detail.headers['<?= config('Security')->headerName ?>'] = document.getElementById('csrf-token').content;
+        document.addEventListener('ajax:expected', (event) => {
+            const tokenElement = document.getElementById('csrf-token');
+            if (tokenElement) {
+                event.detail.headers['<?= config('Security')->headerName ?>'] = tokenElement.content;
+            }
         });
     </script>
 </head>
-<body class="bg-gray-100 text-gray-900 font-sans antialiased" hx-boost="true">
+<body class="bg-gray-100 text-gray-900 font-sans antialiased">
     
     <div class="flex h-screen overflow-hidden" x-data="{ isSidebarOpen: false }">
         
@@ -47,10 +41,13 @@
         <!-- Sidebar -->
         <?php if (session()->has('user_id')): ?>
         <aside :class="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               x-data="{ currentPath: window.location.pathname }"
+               @popstate.window="currentPath = window.location.pathname"
+               @ajax:success.window="setTimeout(() => currentPath = window.location.pathname, 50)"
                class="fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 text-white flex flex-col flex-shrink-0 transition-transform duration-300 transform lg:translate-x-0 lg:static lg:inset-0">
             <!-- Logo -->
             <div class="h-16 flex items-center justify-between px-6 bg-gray-800">
-                <a href="<?= base_url('/') ?>" class="font-bold text-xl text-white tracking-wider flex items-center" hx-boost="false">
+                <a href="<?= base_url('/') ?>" class="font-bold text-xl text-white tracking-wider flex items-center">
                     <svg class="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     VideoApp
                 </a>
@@ -61,31 +58,31 @@
 
             <!-- Navigation Links -->
             <div class="flex-1 overflow-y-auto py-4">
-                <nav class="space-y-1 px-3" hx-target="#main-content" hx-select="#main-content" hx-swap="outerHTML" @click="if (window.innerWidth < 1024) isSidebarOpen = false">
+                <nav class="space-y-1 px-3" @click="if (window.innerWidth < 1024) isSidebarOpen = false">
                     <?php if (session('user_role') === 'admin'): ?>
                         <div class="px-3 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Administration
                         </div>
-                        <a href="<?= base_url('admin/dashboard') ?>" class="<?= uri_string() === 'admin/dashboard' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <a x-target.push="main-content" href="<?= base_url('admin/dashboard') ?>" :class="currentPath === '/admin/dashboard' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md">
                             <span class="truncate">Dashboard</span>
                         </a>
-                        <a href="<?= base_url('admin/customers') ?>" class="<?= strpos(uri_string(), 'admin/customers') !== false ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <a x-target.push="main-content" href="<?= base_url('admin/customers') ?>" :class="currentPath.startsWith('/admin/customers') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md">
                             <span class="truncate">Customers</span>
                         </a>
-                        <a href="<?= base_url('admin/videos') ?>" class="<?= strpos(uri_string(), 'admin/videos') !== false ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <a x-target.push="main-content" href="<?= base_url('admin/videos') ?>" :class="currentPath.startsWith('/admin/videos') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md">
                             <span class="truncate">Videos</span>
                         </a>
-                         <a href="<?= base_url('admin/requests') ?>" class="<?= strpos(uri_string(), 'admin/requests') !== false ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                         <a x-target.push="main-content" href="<?= base_url('admin/requests') ?>" :class="currentPath.startsWith('/admin/requests') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md">
                             <span class="truncate">Access Requests</span>
                         </a>
                     <?php else: ?>
                         <div class="px-3 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Menu
                         </div>
-                        <a href="<?= base_url('customer/dashboard') ?>" class="<?= uri_string() === 'customer/dashboard' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <a x-target.push="main-content" href="<?= base_url('customer/dashboard') ?>" :class="currentPath === '/customer/dashboard' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md">
                             <span class="truncate">Dashboard</span>
                         </a>
-                        <a href="<?= base_url('customer/videos') ?>" class="<?= strpos(uri_string(), 'customer/videos') !== false ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <a x-target.push="main-content" href="<?= base_url('customer/videos') ?>" :class="currentPath.startsWith('/customer/videos') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md">
                             <span class="truncate">Browse Videos</span>
                         </a>
                     <?php endif; ?>
@@ -106,7 +103,7 @@
                     </div>
                 </div>
                 <div class="mt-3">
-                    <a href="<?= base_url('logout') ?>" hx-boost="false" class="block w-full px-4 py-2 text-sm text-center font-medium text-red-400 bg-gray-900 hover:bg-red-900/20 hover:text-red-300 rounded-md transition-colors">
+                    <a href="<?= base_url('logout') ?>" class="block w-full px-4 py-2 text-sm text-center font-medium text-red-400 bg-gray-900 hover:bg-red-900/20 hover:text-red-300 rounded-md transition-colors">
                         Sign Out
                     </a>
                 </div>
@@ -135,6 +132,13 @@
             
             <!-- Main Scrollable Area -->
             <main id="main-content" class="flex-1 overflow-y-auto bg-gray-100 p-4 lg:p-8 relative">
+                <!-- CI4 Flashdata Toast Trigger -->
+                <?php if (session()->getFlashdata('success')): ?>
+                    <div x-data x-init="$nextTick(() => { $dispatch('show-toast', {message: '<?= esc(session()->getFlashdata('success')) ?>', type: 'success'}) })"></div>
+                <?php endif; ?>
+                <?php if (session()->getFlashdata('error')): ?>
+                    <div x-data x-init="$nextTick(() => { $dispatch('show-toast', {message: '<?= esc(session()->getFlashdata('error')) ?>', type: 'error'}) })"></div>
+                <?php endif; ?>
                 <?= $this->renderSection('content') ?>
             </main>
         </div>
@@ -193,45 +197,7 @@
         </template>
     </div>
 
-    <script>
-        document.body.addEventListener('htmx:pushedIntoHistory', function(event) {
-            const path = window.location.pathname;
-            const links = document.querySelectorAll('nav a');
-            
-            links.forEach(link => {
-                const href = link.getAttribute('href');
-                // Remove active classes
-                link.classList.remove('bg-gray-800', 'text-white');
-                link.classList.add('text-gray-300', 'hover:bg-gray-700', 'hover:text-white');
-                
-                // Add active classes if path matches
-                if (href) {
-                     try {
-                        const linkUrl = new URL(href, window.location.origin);
-                        const linkPath = linkUrl.pathname;
-                        
-                        // Exact match or subpath match (but not for root '/')
-                        if (path === linkPath || (linkPath !== '/' && path.startsWith(linkPath))) {
-                             link.classList.remove('text-gray-300', 'hover:bg-gray-700', 'hover:text-white');
-                             link.classList.add('bg-gray-800', 'text-white');
-                        }
-                     } catch (e) {
-                         console.error('Invalid URL:', href);
-                     }
-                }
-            });
-        });
+    </div>
 
-        // Re-initialize Alpine.js for swapped content
-        document.addEventListener('htmx:afterSwap', function(event) {
-            // Alpine v3 generally handles this via MutationObserver.
-            // But if there's any lag or specific components failing, we can nudge it.
-        });
-        
-        // Ensure Alpine starts after HTMX if both are loaded
-        document.addEventListener('alpine:init', () => {
-            // Optional: integration code
-        });
-    </script>
 </body>
 </html>

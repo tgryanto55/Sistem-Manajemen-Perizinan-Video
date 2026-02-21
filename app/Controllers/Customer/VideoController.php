@@ -136,32 +136,5 @@ class VideoController extends BaseController
         return $this->response->setStatusCode(404)->setBody('Video source not valid');
     }
 
-    /**
-     * Helper untuk refresh daftar video via HTMX.
-     */
-    public function listRows()
-    {
-        helper(['video', 'url']);
-        $videoModel = new VideoModel();
-        $accessService = new VideoAccessService();
-        $userId = session()->get('user_id');
 
-        $videos = $videoModel->getVideosWithAccess($userId);
-        
-        // Logic sama seperti index, proses status akses
-        foreach ($videos as &$video) {
-            $status = $video['access_status'] ?? 'none';
-            $isExpired = ($status === 'approved' && $video['expired_at'] && $accessService->isExpired($video['expired_at']));
-            
-            $video['access_status'] = $isExpired ? 'expired' : $status;
-            $video['has_active_access'] = ($status === 'approved' && !$isExpired);
-            $video['thumbnail_url'] = get_youtube_thumbnail($video['video_path']);
-        }
-
-        $data = [
-            'videos' => $videos
-        ];
-        
-        return view('customer/videos/_rows', $data);
-    }
 }
