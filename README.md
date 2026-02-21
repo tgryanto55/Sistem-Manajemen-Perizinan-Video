@@ -1,4 +1,4 @@
-# 🎥 Sistem Manajemen Perizinan Video (Technical Test - Mediatama)
+# 🎥 Sistem Manajemen Perizinan Video
 
 [![Framework](https://img.shields.io/badge/Framework-CodeIgniter%204.7-EF4444?style=for-the-badge&logo=codeigniter&logoColor=white)](https://codeigniter.com)
 [![Styling](https://img.shields.io/badge/CSS-Tailwind%204.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
